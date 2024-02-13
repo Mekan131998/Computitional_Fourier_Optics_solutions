@@ -1,0 +1,22 @@
+%Exercises on computitional Fourier optics
+% 1.7 Exercises:
+% 1.1. Scetch the following functions:
+% Defining the rectangle function
+% plotting
+t = -4:0.1:2;
+
+[X, Y] = meshgrid(t, t);
+
+circle_values=circle_func(X-2, Y)+circle_func(X+2, Y);
+
+figure(); clf; 
+subplot(3, 2, 1)
+plot(t, rectan(t))
+title('Rectangle Function')
+
+subplot(3, 2, 2)
+plot(t, triangle(t))
+title('Triangle Function')
+
+subplot(3, 2, 3)
+surf(X, Y, double(circle_values));
