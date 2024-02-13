@@ -1,4 +1,5 @@
-# Computitional Fourier Optics with Matlab
+# Computitional_Fourier_Optics_solutions
+## Chapter notes and graphs
 
-### Chapter 4. Scalar diffraction propagation
+![images](formula_ch3)
 
