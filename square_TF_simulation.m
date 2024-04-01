@@ -1,0 +1,193 @@
+% Square beam example
+close all; 
+%% Source simulation: 
+
+% Consider a source plane with dimensions 0.5 x 0.5 m (L1=0.5 m) 
+
+L1=0.5;                     % side length
+M=250;                      % number of samples
+dx1=L1/M;                   % src sample interval 
+x1=-L1/2:dx1:L1/2-dx1;      % src coords
+y1=x1;
+
+% assume a square aperture with a half width of 0.051 m (51 mm) illuminated
+% by a unit-amplitude plane wave from the backside 
+
+lambda=0.5*10^-6;           % illumination wavelength
+k=2*pi/lambda;              % wavenumber
+w=0.051;                    % source half width (m) 
+z=2000;                     % propagation dist (m)
+
+[X1, Y1]=meshgrid(x1, y1);
+u1=rect(X1/(2*w)).*rect(Y1/w);      % src field 
+I1=abs(u1.^2);                      % src irradiance 
+
+% Source simulation plot
+figure(1); clf; 
+imagesc(x1, y1, I1);
+axis square; axis xy;
+colormap("gray"); xlabel("x (m)"); ylabel("y (m)");
+title("z=0 m");
+
+%% Propagation using TF propagator 
+
+% % % % % % % % % % % % % % % % % % % % % % % 
+%  propagation distance z=2000 m 
+%  Fresnel number 
+%  N_F=w^2/(lambda*z) = 2.6 - reasonable for applying the Fresnel
+%  experession because N_F ~ 1 
+% % % % % % % % % % % % % % % % % % % % % % % % 
+
+u2=propTF(u1, L1, lambda, z);    % propagation 
+
+x2=x1;                      % observation plane coordinates
+y2=y1;
+I2=abs(u2.^2);              % observation plane irradiation
+
+% plotting irradiance
+figure(2); clf; 
+imagesc(x2, y2, I2);
+axis square; axis xy; 
+colormap("gray"); xlabel("x (m)"); ylabel("y (m)");
+title(["z=", num2str(z), " m"]);
+
+% plotting observation field magnitude 
+figure(3); clf; 
+plot(x2, abs(u2(M/2+1, :)));
+xlabel("x (m)"); ylabel(" Magnitude ");
+title(["z=", num2str(z), " m"]);
+
+% plotting observation field phase 
+figure(5); clf; 
+plot(x2, unwrap(angle(u2(M/2+1, :)))); 
+xlabel(" x (m)"); ylabel("Phase (rad)");
+title(["z=", num2str(z), " m"]);
+
+%% Propagation using IR propagator 
+
+u2=propIR(u1, L1, lambda, z);
+
+x2=x1;                      % observation plane coordinates
+y2=y1;
+I2=abs(u2.^2);              % observation plane irradiation
+
+% plotting irradiance at the observation plane:
+figure(6); clf; 
+imagesc(x2, y2, I2);
+axis square; axis xy; 
+colormap("gray"); xlabel("x (m)"); ylabel("y (m)");
+title(["z=", num2str(z), " m"]);
+
+% plotting observation field magnitude 
+figure(7); clf; 
+plot(x2, abs(u2(M/2+1, :)));
+xlabel("x (m)"); ylabel(" Magnitude ");
+title(["z=", num2str(z), " m"]);
+
+% plotting observation field phase 
+figure(8); clf; 
+plot(x2, unwrap(angle(u2(M/2+1, :)))); 
+xlabel(" x (m)"); ylabel("Phase (rad)");
+title(["z=", num2str(z), " m"]);
+
+
+%% Illustration of limits of the TF and IR propagation algorithms: 
+
+z=[1000, 1000, 2000, 2000, 4000, 4000, 20000, 20000];
+
+% illustrating observation plane irradiances:
+figure(9); clf;
+tiledlayout(4,2, 'Padding', 'none', 'TileSpacing', 'compact');
+for i=1:8
+    if mod(i, 2)
+        nexttile
+        imagesc(x2, y2, abs(propTF(u1, L1, lambda, z(i)).^2)); 
+        colormap("gray"); xlabel("x (m)"); ylabel("y (m)");
+        title(sprintf('TF z=%d',z(i)));
+    else 
+        nexttile
+        imagesc(x2, y2, abs(propIR(u1, L1, lambda, z(i)).^2));
+        colormap("gray"); xlabel("x (m)"); ylabel("y (m)");
+        title(sprintf('IR z=%d',z(i)));
+    end
+end
+
+%% Plotting comparison of the intensity profile: 
+
+figure(10); clf;
+tiledlayout(4,2, 'Padding', 'none', 'TileSpacing', 'compact');
+for i=1:8
+    if mod(i, 2)
+        nexttile
+        u2=propTF(u1, L1, lambda, z(i));
+        plot(x2, abs(u2(M/2+1, :)));
+        xlabel("x (m)"); ylabel(" Magnitude ");
+        title(sprintf('TF z=%d',z(i)));
+    else 
+        nexttile
+        u2=propIR(u1, L1, lambda, z(i));
+        plot(x2, abs(u2(M/2+1, :)));
+        xlabel("x (m)"); ylabel(" Magnitude ");
+        title(sprintf('IR z=%d',z(i)));
+    end
+end
+
+%% Analytical comparison
+
+z=1000;
+
+alpha1=-sqrt(2/(lambda*z))*(w+X1);
+alpha2=sqrt(2/(lambda*z))*(w-X1);
+
+beta1=-sqrt(2/(lambda*z))*(w+Y1);
+beta2=sqrt(2/(lambda*z))*(w-Y1);
+
+%calculating Fresnel functions:
+% 
+% C_a1=mfun('FresnelC', alpha1);
+% C_a2=mfun('FresnelC', alpha2);
+% C_b1=mfun('FresnelC', beta1);
+% C_b2=mfun('FresnelC', beta2);
+% 
+% S_a1=mfun('FresnelS', alpha1);
+% S_a2=mfun('FresnelS', alpha2);
+% S_b1=mfun('FresnelS', beta1);
+% S_b2=mfun('FresnelS', beta2);
+C_a1=fresnelc(alpha1);
+C_a2=fresnelc(alpha2);
+C_b1=fresnelc(beta1);
+C_b2=fresnelc(beta2);
+
+S_a1=fresnels(alpha1);
+S_a2=fresnels(alpha2);
+S_b1=fresnels(beta1);
+S_b2=fresnels(beta2);
+
+U_2a=exp(1j*k*z)/(2*1j).*((C_a2-C_a1)+1j*(S_a2-S_a1)).*((C_b2-C_b1)+1j*(S_b2-S_b1));
+
+I_2a=abs(U_2a).^2;
+
+%% Plotting analytic irradiance 
+
+figure(11); clf; 
+imagesc(x2, y2, I_2a);
+axis square; axis xy; 
+colormap("gray"); xlabel("x (m)"); ylabel("y (m)");
+title(sprintf("Irradiance using analytic formula, z=%d", z));
+
+
+%% Plotting analytic magnitude and phase in the observation plane
+figure(12); clf; 
+subplot(1, 2, 1)
+plot(x2, abs(U_2a(M/2+1, :)));
+xlabel("x (m)"); ylabel(" Magnitude ");
+title(sprintf('Magnitude using analytic expression z=%d',z));
+axis square; 
+
+subplot(1, 2, 2)
+plot(x2, unwrap(angle(U_2a(M/2+1, :)))); 
+xlabel("x (m)"); ylabel(" Phase ");
+title(sprintf('Phase at z=%d',z));
+axis square;
+
+

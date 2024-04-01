@@ -1,0 +1,103 @@
+%%
+clear;
+close all; 
+%%
+% Exercises
+% 5.1. Assume circular aperture with radius w=0.05 m illuminated by a plane
+% wave, where lambda=0.5 um. Assume propagation distance of 1000 m and a
+% sumulation array size of 500 x 500 samples. Assume critical sampling for
+% a Fresnel propagation. 
+
+% a) Find a side length L1, sample interval dx, and the Nyquiest frequency 
+
+% source support D1=w=0.05 m. L1 should be L1=3*D1 or L1=2*D1
+lambda=0.5e-6;
+w=0.05;
+
+L1=3*w;
+M=500; 
+dx1=L1/M; 
+z=1000;                 % <---- propagation distance
+
+% the Nyquist frequency F_N
+
+F_N=1/(2*dx1);                    % =1667
+
+% b) Determine source effective bandwidth B1 
+B1=L1/(2*lambda*z);               % =150
+
+% Is B1<F_N ? Yes 
+
+delta_x=lambda*z/L1;
+
+
+% c) Determine the Fresnel number. Is the propagation distance within the
+% Fresnel region? 
+
+N_F=w^2/(lambda*z);   % =5, OK, acceptable number 
+
+% d) using the value for L1 from (a) simulate Fresnel number propagation
+% for distancies of 500, 1000, and 2000 m. 
+
+%% d1. Sumulate the circular source: 
+
+x1=-L1/2:dx1:L1/2-dx1; y1=x1;          % source coords
+
+[X1, Y1]=meshgrid(x1, y1);
+
+R=sqrt(X1.^2+Y1.^2);
+u1=circ(R/(w));
+I1=abs(u1).^2;
+
+% Source simulation plot
+figure(1); clf; 
+imagesc(x1, y1, I1);
+axis square; axis xy;
+colormap("gray"); xlabel("x (m)"); ylabel("y (m)");
+title("z=0 m");
+
+%% d2. Propagation simulation 
+% Illustration of limits of the TF and IR propagation algorithms: 
+
+x2=x1;                      % observation plane coordinates
+y2=y1;
+
+z=[500, 500, 1000, 1000, 2000, 2000];
+
+% illustrating observation plane irradiances:
+figure(9); clf;
+tiledlayout(3,2, 'Padding', 'none', 'TileSpacing', 'compact');
+for i=1:6
+    if mod(i, 2)
+        nexttile
+        imagesc(x2, y2, abs(propTF(u1, L1, lambda, z(i)).^2)); 
+        colormap("gray"); xlabel("x (m)"); ylabel("y (m)");
+        title(sprintf('TF z=%d',z(i)));
+    else 
+        nexttile
+        imagesc(x2, y2, abs(propIR(u1, L1, lambda, z(i)).^2));
+        colormap("gray"); xlabel("x (m)"); ylabel("y (m)");
+        title(sprintf('IR z=%d',z(i)));
+    end
+end
+
+%% Plotting beam profile of the obervation field 
+
+figure(10); clf;
+tiledlayout(3,2, 'Padding', 'none', 'TileSpacing', 'compact');
+for i=1:6
+    if mod(i, 2)
+        nexttile
+        u2=propTF(u1, L1, lambda, z(i));
+        plot(x2, abs(u2(M/2+1, :)));
+        xlabel("x (m)"); ylabel(" Magnitude ");
+        title(sprintf('TF z=%d',z(i)));
+    else 
+        nexttile
+        u2=propIR(u1, L1, lambda, z(i));
+        plot(x2, abs(u2(M/2+1, :)));
+        xlabel("x (m)"); ylabel(" Magnitude ");
+        title(sprintf('IR z=%d',z(i)));
+    end
+end
+

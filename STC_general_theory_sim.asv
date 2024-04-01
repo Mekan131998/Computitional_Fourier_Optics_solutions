@@ -1,0 +1,53 @@
+% Simulation STC
+% from Akturk 2010 J. Opt. 12 093001
+% (http://iopscience.iop.org/2040-8986/12/9/093001)
+
+
+
+FRG=0;
+PFT=7;                  % fs/mm
+lambda=800e-9;          % m
+w0=5e-3;
+beta=0;
+tau=20e-15;
+
+% spot size of the gaussian beam:
+
+zR=pi*w0^2/lambda;
+z=2e-3;
+
+w_z=w0*sqrt(1+(z/zR).^2);
+R_z=z*(1+(zR/z )^2);
+
+L=20e-3;
+M=500;
+dx=L/M;
+
+x=-L/2:dx:L/2-dx;
+
+T=500e-15;
+dt=T/M;
+t=-T/2:dt:T/2-dt;
+
+
+Q_xx=-1j*pi/(lambda*R_z)-1/(w_z^2);
+
+Q_tt=1j*beta+1/tau^2;
+
+Q_xt=1j/2*FRG+Q_tt*PFT;
+
+[X, T]=meshgrid(x, t);
+
+E=exp(Q_xx*X.^2+2*Q_xt*X*T-Q_tt*T.^2);
+
+I=(abs(E)/max(abs(E))).^2;
+
+
+figure(1); clf;
+imagesc(t, x, I)
+colormap("parula");
+xlabel('position, mm');
+ylabel('Time, fs');
+axis square;
+
+
